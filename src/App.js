@@ -12,6 +12,8 @@ import Friends from './pages/profile/Friends'
 import Photos from './pages/profile/Photos'
 import Saved from './pages/Saved';
 import Notifications from './pages/Notifications';
+import Signup from './pages/Signup';
+import Login from './pages/Login';
 
 export default function App() {
   return (
@@ -25,6 +27,8 @@ export default function App() {
       </Route>
       <Route path='/saved' element={<Saved />} />
       <Route path='/notifications' element={<Notifications />} />
+      <Route path='/signup' element={<Signup />} />
+      <Route path='/login' element={<Login />} />
     </Routes>
   )
 }

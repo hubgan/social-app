@@ -1,10 +1,10 @@
 import React from 'react'
+import { Link } from 'react-router-dom';
 
 // components
 import Layout from '../components/Layout'
 import Card from '../components/Card';
 import Avatar from '../components/Avatar'
-import { Link } from 'react-router-dom';
 
 export default function Notifications() {
     return (
