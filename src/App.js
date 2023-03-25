@@ -1,4 +1,4 @@
-import { Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Route, Routes } from 'react-router-dom';
 
 // styles
 import './App.css';
@@ -15,20 +15,30 @@ import Notifications from './pages/Notifications';
 import Signup from './pages/Signup';
 import Login from './pages/Login';
 
+// hooks
+import useAuthContext from './hooks/useAuthContext';
+import PrivateRoute from './components/PrivateRoute';
+
 export default function App() {
+  const { authIsReady } = useAuthContext();
+
   return (
-    <Routes>
-      <Route path='/' element={<Home />} />
-      <Route path='/profile' element={<ProfilePage />}>
-        <Route path='posts' element={<Posts />} />
-        <Route path='about' element={<About />} />
-        <Route path='friends' element={<Friends />} />
-        <Route path='photos' element={<Photos />} />
-      </Route>
-      <Route path='/saved' element={<Saved />} />
-      <Route path='/notifications' element={<Notifications />} />
-      <Route path='/signup' element={<Signup />} />
-      <Route path='/login' element={<Login />} />
-    </Routes>
+    <BrowserRouter>
+      {authIsReady && (
+        <Routes>
+          <Route path='/' element={<PrivateRoute Component={Home} />} />
+          <Route path='/profile' element={<PrivateRoute Component={ProfilePage} />}>
+            <Route path='posts' element={<PrivateRoute Component={Posts} />} />
+            <Route path='about' element={<PrivateRoute Component={About} />} />
+            <Route path='friends' element={<PrivateRoute Component={Friends} />} />
+            <Route path='photos' element={<PrivateRoute Component={Photos} />} />
+          </Route>
+          <Route path='/saved' element={<PrivateRoute Component={Saved} />} />
+          <Route path='/notifications' element={<PrivateRoute Component={Notifications} />} />
+          <Route path='/signup' element={<PrivateRoute Component={Signup} RedirectURL={'/'} isUserLoggedIn={false} />} />
+          <Route path='/login' element={<PrivateRoute Component={Login} RedirectURL={'/'} isUserLoggedIn={false} />} />
+        </Routes>
+      )}
+    </BrowserRouter>
   )
 }
