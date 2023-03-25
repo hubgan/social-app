@@ -34,6 +34,7 @@ export default function PostFormCard() {
             content: message,
             photos: postImagesUrls,
             createdBy: user.uid,
+            creatorName: user.displayName,
             creatorAvatar: user.photoURL,
             comments: [],
             likes: 0,

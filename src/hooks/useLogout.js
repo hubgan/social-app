@@ -31,6 +31,8 @@ export default function useLogout() {
     }
 
     useEffect(() => {
+        setIsCancelled(false);
+
         return () => setIsCancelled(true);
     }, [])
 

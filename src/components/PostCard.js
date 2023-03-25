@@ -26,7 +26,7 @@ export default function PostCard({ post }) {
                 <div>
                     <p>
                         <Link to={'/profile/posts'}>
-                            <span href='' className='font-semibold cursor-pointer hover:underline'>John Doe</span>
+                            <span href='' className='font-semibold cursor-pointer hover:underline'>{post.creatorName}</span>
                         </Link>
                         <span> shared a </span>
                         <a className='text-socialBlue'>post</a>
