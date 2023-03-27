@@ -8,10 +8,12 @@ import Card from './Card';
 // hooks
 import useComponentVisible from '../hooks/useComponentVisible';
 import useAuthContext from '../hooks/useAuthContext';
+import { useDocument } from '../hooks/useDocument';
 
 export default function PostCard({ post }) {
     const { ref, isComponentVisible, setIsComponentVisible } = useComponentVisible(false);
     const { user } = useAuthContext();
+    const { document } = useDocument('users', post.createdBy);
 
     return (
         <Card>
@@ -19,7 +21,7 @@ export default function PostCard({ post }) {
                 <div>
                     <Link to={'/profile/posts'}>
                         <span className='cursor-pointer'>
-                            <Avatar src={post.creatorAvatar} />
+                            {document && <Avatar src={document.avatar} />}
                         </span>
                     </Link>
                 </div>

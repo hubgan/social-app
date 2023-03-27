@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { Link, Outlet, useLocation, useParams } from 'react-router-dom';
 
 // components
@@ -12,14 +12,21 @@ import { useDocument } from '../hooks/useDocument'
 import { useUploadFile } from '../hooks/useUploadFile'
 import { useFirestore } from '../hooks/useFirestore'
 import useAuthContext from '../hooks/useAuthContext';
+import { updateProfile } from 'firebase/auth';
+import { useCollection } from '../hooks/useCollection';
 
 export default function ProfilePage() {
     const { pathname } = useLocation();
     const { id } = useParams();
     const { user } = useAuthContext();
+
+    const { documents: notificationsCollection } = useCollection('notifications', ['sendBy', 'in', [user.uid, id]]);
     const { document } = useDocument('users', id);
     const { uploadFile } = useUploadFile();
     const { updateDocument } = useFirestore('users');
+    const { addDocument } = useFirestore('notifications');
+    const [isEditMode, setIsEditMode] = useState(false);
+    const [location, setLocation] = useState('');
 
     const isPosts = pathname.includes('posts') || pathname === '/profile';
     const isAbout = pathname.includes('about');
@@ -29,12 +36,45 @@ export default function ProfilePage() {
     const nonActiveTabClasses = 'flex gap-1 px-4 py-1 items-center border-b-4 border-b-white';
     const activeTabClasses = 'flex gap-1 px-4 py-1 items-center border-socialBlue border-b-4 text-socialBlue font-bold';
 
+    const checkRequest = () => {
+        return notificationsCollection.some((notification) => {
+            return (notification.sendTo === id || notification.sendBy === id) && notification.type === 'FRIEND_REQUEST';
+        });
+    }
+
+    const isFriendRequestSend = notificationsCollection ? checkRequest() : false;
+    console.log(notificationsCollection)
+
     const handleCoverPhotoChange = async (e) => {
         const photo = e.target.files[0];
         const uploadPath = `avatars/${id}/${photo.name}`;
         const fileURL = await uploadFile(uploadPath, photo);
 
+        await updateProfile(user, { photoURL: fileURL });
         updateDocument(id, { avatar: fileURL });
+    }
+
+    const handleSaveLocation = async () => {
+        if (location === '') {
+            setIsEditMode(false);
+            return;
+        }
+
+        await updateDocument(id, { location: location });
+
+        setLocation('');
+        setIsEditMode(false);
+    }
+
+    const handleAddFriend = async () => {
+        const notification = {
+            type: 'FRIEND_REQUEST',
+            sendBy: user.uid,
+            sendTo: id,
+            senderName: user.displayName
+        }
+
+        await addDocument(notification);
     }
 
     return (
@@ -55,11 +95,25 @@ export default function ProfilePage() {
                         </label>}
                     </div>
                     <div className='p-4 pb-0'>
-                        <div className='ml-24 md:ml-40'>
-                            <h1 className='text-3xl font-bold'>John Doe</h1>
-                            <div className='text-gray-500 leading-4'>
-                                Stockholm, Sweden
-                            </div>
+                        <div className='ml-24 md:ml-40 relative'>
+                            <h1 className='text-3xl font-bold'>{document && document.name}</h1>
+                            {!isEditMode && <div className='text-gray-500 leading-4'>
+                                {document && document.location}
+                            </div>}
+                            {isEditMode && <input type='text' className='px-2 py-1 outline-none border-2 border-gray-600 rounded-md' placeholder={document.location}
+                                onChange={(e) => { setLocation(e.target.value) }}
+                            />}
+                            {!isEditMode && id === user.uid && <button onClick={() => setIsEditMode(true)} className='absolute top-2 right-2 border-2 border-gray-600 px-3 py-1 rounded-md'>
+                                Edit Profile
+                            </button>}
+                            {isEditMode && id === user.uid && <button onClick={handleSaveLocation} className='absolute top-2 right-2 border-2 border-gray-600 px-3 py-1 rounded-md'>
+                                Save
+                            </button>}
+                            {id !== user.uid && !isFriendRequestSend && document && !document.friends.includes(user.uid) &&
+                                <button onClick={handleAddFriend} className='absolute top-2 right-2 border-2 border-gray-600 px-3 py-1 rounded-md'>
+                                    Add to friends
+                                </button>
+                            }
                         </div>
                         <div className='flex mt-4 md:mt-10'>
                             <Link to={`/profile/${id}/posts`} className={isPosts ? activeTabClasses : nonActiveTabClasses}>
@@ -90,7 +144,7 @@ export default function ProfilePage() {
                     </div>
                 </div>
             </Card>
-            <Outlet />
+            <Outlet context={[document, updateDocument]} />
         </Layout>
     );
 }

@@ -35,6 +35,8 @@ export default function useSignup() {
                 name: fullname,
                 email: email,
                 avatar: imgUrl,
+                location: 'location...',
+                about: 'about me...',
                 cover: 'https://images.unsplash.com/photo-1498503182468-3b51cbb6cb24?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80',
                 friends: []
             });

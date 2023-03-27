@@ -2,6 +2,7 @@ import React from 'react'
 
 // components
 import NavigationCard from './NavigationCard';
+import Search from './Search';
 
 export default function Layout({ children, hideNavigation }) {
     let mainColumnClasses;
@@ -16,6 +17,7 @@ export default function Layout({ children, hideNavigation }) {
         <div className='md:flex gap-6 mt-4 max-w-4xl mx-auto mb-24 md:mb-0'>
             {!hideNavigation && (
                 <div className='fixed z-50 w-full bottom-0 -mb-5 md:static md:w-1/4 md:mb-0'>
+                    <Search />
                     <NavigationCard />
                 </div>
             )}

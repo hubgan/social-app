@@ -27,7 +27,7 @@ export default function App() {
       {authIsReady && (
         <Routes>
           <Route path='/' element={<PrivateRoute Component={Home} />} />
-          <Route path='/profile' element={<PrivateRoute Component={ProfilePage} />}>
+          <Route path='/profile/:id' element={<PrivateRoute Component={ProfilePage} />}>
             <Route path='posts' element={<PrivateRoute Component={Posts} />} />
             <Route path='about' element={<PrivateRoute Component={About} />} />
             <Route path='friends' element={<PrivateRoute Component={Friends} />} />

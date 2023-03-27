@@ -35,7 +35,6 @@ export default function PostFormCard() {
             photos: postImagesUrls,
             createdBy: user.uid,
             creatorName: user.displayName,
-            creatorAvatar: user.photoURL,
             comments: [],
             likes: 0,
             shares: 0
@@ -76,16 +75,17 @@ export default function PostFormCard() {
                 <div>
                     <Avatar src={user.photoURL} />
                 </div>
-                <textarea className='grow p-3 h-14 resize-none' placeholder={`What's on your mind, David?`}
+                <textarea className='grow p-3 h-14 resize-none'
+                    placeholder={`What's on your mind, ${user.displayName.split(' ')[0]}?`}
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
                 />
             </div>
             {readerPhotos.length > 0 && (
-                <div className='flex gap-2'>
+                <div className='flex gap-2 max-w-full overflow-x-auto py-2'>
                     {readerPhotos.map((photo) => (
-                        <div key={photo}>
-                            <img src={photo} alt={photo} className='w-auto h-24 rounded-md' />
+                        <div className='shrink-0' key={photo}>
+                            <img src={photo} alt={photo} className='w-24 h-24 rounded-md' />
                         </div>
                     ))}
                 </div>
