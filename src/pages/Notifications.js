@@ -9,7 +9,7 @@ import SingleNotification from '../components/SingleNotification';
 
 export default function Notifications() {
     const { user } = useAuthContext();
-    const { documents } = useCollection('notifications', ['sendTo', '==', user.uid]);
+    const { documents } = useCollection('notifications', [{ property: 'sendTo', operator: '==', value: user.uid }]);
 
     return (
         <Layout>

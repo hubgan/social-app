@@ -12,7 +12,7 @@ export default function Friends() {
     const { id } = useParams();
     const [isLoading, setIsLoading] = useState(false);
     const [friends, setFriends] = useState([]);
-    const [document] = useOutletContext();
+    const { document } = useOutletContext();
 
     useEffect(() => {
         async function getFriends() {
@@ -33,7 +33,7 @@ export default function Friends() {
 
     if (isLoading) {
         return (
-            <div>
+            <div className='flex items-center justify-center mt-10'>
                 <LoadingSpinner />
             </div>
         )

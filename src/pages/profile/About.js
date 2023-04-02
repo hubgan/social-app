@@ -11,7 +11,7 @@ export default function About() {
     const [isEditMode, setIsEditMode] = useState(false);
     const [about, setAbout] = useState('');
     const { id } = useParams();
-    const [document, updateDocument] = useOutletContext();
+    const { document, updateDocument } = useOutletContext();
     const { user } = useAuthContext();
 
     const handleSave = async () => {

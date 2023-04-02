@@ -1,19 +1,25 @@
 import React from 'react'
-import { useParams } from 'react-router-dom';
+import { useOutletContext } from 'react-router-dom';
 
 // components
 import PostCard from '../../components/PostCard'
+import LoadingSpinner from '../../components/LoadingSpinner'
 
 // hooks
-import { useCollection } from '../../hooks/useCollection'
-
 export default function Posts() {
-    const { id } = useParams();
-    const { documents } = useCollection('posts', ['createdBy', '==', id]);
+    const { posts, postsLoading } = useOutletContext();
+
+    if (postsLoading) {
+        return (
+            <div className='flex items-center justify-center mt-10'>
+                <LoadingSpinner />
+            </div>
+        )
+    }
 
     return (
         <>
-            {documents && documents.map((post) => (
+            {posts && posts.map((post) => (
                 <PostCard key={post.id} post={post} />
             ))}
         </>

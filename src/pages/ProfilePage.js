@@ -1,5 +1,8 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Link, Outlet, useLocation, useParams } from 'react-router-dom';
+import { combineID } from '../utils/utils'
+import { collection, onSnapshot, query, where } from 'firebase/firestore';
+import { db } from '../firebase/config';
 
 // components
 import Layout from '../components/Layout';
@@ -16,34 +19,52 @@ import { updateProfile } from 'firebase/auth';
 import { useCollection } from '../hooks/useCollection';
 
 export default function ProfilePage() {
+    const [isEditMode, setIsEditMode] = useState(false);
+    const [location, setLocation] = useState('');
     const { pathname } = useLocation();
     const { id } = useParams();
     const { user } = useAuthContext();
-
-    const { documents: notificationsCollection } = useCollection('notifications', ['sendBy', 'in', [user.uid, id]]);
     const { document } = useDocument('users', id);
     const { uploadFile } = useUploadFile();
     const { updateDocument } = useFirestore('users');
     const { addDocument } = useFirestore('notifications');
-    const [isEditMode, setIsEditMode] = useState(false);
-    const [location, setLocation] = useState('');
+    const { documents: notifications } = useCollection('notifications', [{ property: 'notificationID', operator: '==', value: combineID(user.uid, id) }])
+
+    const isFriendRequestSend = notifications && notifications.length > 0 ? true : false;
 
     const isPosts = pathname.includes('posts') || pathname === '/profile';
     const isAbout = pathname.includes('about');
     const isFriends = pathname.includes('friends');
     const isPhotos = pathname.includes('photos');
-
     const nonActiveTabClasses = 'flex gap-1 px-4 py-1 items-center border-b-4 border-b-white';
     const activeTabClasses = 'flex gap-1 px-4 py-1 items-center border-socialBlue border-b-4 text-socialBlue font-bold';
 
-    const checkRequest = () => {
-        return notificationsCollection.some((notification) => {
-            return (notification.sendTo === id || notification.sendBy === id) && notification.type === 'FRIEND_REQUEST';
-        });
-    }
+    const [posts, setPosts] = useState(null);
+    const [postsLoading, setPostsLoading] = useState(false);
+    const [postsError, setPostsError] = useState(null);
 
-    const isFriendRequestSend = notificationsCollection ? checkRequest() : false;
-    console.log(notificationsCollection)
+    useEffect(() => {
+        setPostsLoading(true);
+
+        let collectionRef = query(collection(db, 'posts'), where('createdBy', '==', id));
+
+        const unsub = onSnapshot(collectionRef, (snapshot) => {
+            const data = snapshot.docs.map((doc) => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+
+            setPosts(data);
+            setPostsLoading(false);
+            setPostsError(null);
+        }, (error) => {
+            console.log(error);
+            setPostsLoading(false);
+            setPostsError(false);
+        });
+
+        return () => unsub();
+    }, [id])
 
     const handleCoverPhotoChange = async (e) => {
         const photo = e.target.files[0];
@@ -55,22 +76,25 @@ export default function ProfilePage() {
     }
 
     const handleSaveLocation = async () => {
+        setIsEditMode(false);
+
         if (location === '') {
-            setIsEditMode(false);
             return;
         }
 
         await updateDocument(id, { location: location });
 
         setLocation('');
-        setIsEditMode(false);
     }
 
     const handleAddFriend = async () => {
+        const notificationID = combineID(user.uid, id);
+
         const notification = {
             type: 'FRIEND_REQUEST',
             sendBy: user.uid,
             sendTo: id,
+            notificationID: notificationID,
             senderName: user.displayName
         }
 
@@ -144,7 +168,7 @@ export default function ProfilePage() {
                     </div>
                 </div>
             </Card>
-            <Outlet context={[document, updateDocument]} />
+            <Outlet context={{ document, updateDocument, posts, postsLoading, postsError }} />
         </Layout>
     );
 }

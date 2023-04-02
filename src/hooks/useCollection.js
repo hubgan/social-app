@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { collection, onSnapshot, query, where, orderBy } from "firebase/firestore";
 import { db } from '../firebase/config'
 
-export function useCollection(collectionName, _query, _orderBy) {
+export function useCollection(collectionName, _query = [], _orderBy) {
     const [documents, setDocuments] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -15,8 +15,10 @@ export function useCollection(collectionName, _query, _orderBy) {
 
         let collectionRef = collection(db, collectionName);
 
-        if (__query) {
-            collectionRef = query(collectionRef, where(...__query));
+        if (__query.length > 0) {
+            const queryConditions = __query.map((condition) => where(condition.property, condition.operator, condition.value))
+
+            collectionRef = query(collectionRef, ...queryConditions);
         }
 
         if (__orderBy) {
