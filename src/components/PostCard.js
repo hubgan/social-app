@@ -1,5 +1,7 @@
-import React from 'react'
+import React, { useCallback, useState } from 'react'
 import { Link } from 'react-router-dom';
+import { throttle } from 'lodash';
+import { formatDistanceToNow } from 'date-fns';
 
 // components
 import Avatar from './Avatar';
@@ -9,11 +11,33 @@ import Card from './Card';
 import useComponentVisible from '../hooks/useComponentVisible';
 import useAuthContext from '../hooks/useAuthContext';
 import { useDocument } from '../hooks/useDocument';
+import { useFirestore } from '../hooks/useFirestore';
 
 export default function PostCard({ post }) {
     const { ref, isComponentVisible, setIsComponentVisible } = useComponentVisible(false);
     const { user } = useAuthContext();
     const { document } = useDocument('users', post.createdBy);
+    const { updateDocument } = useFirestore('posts');
+    const [likesCount, setLikesCount] = useState(post.likes.length);
+    const [liked, setLiked] = useState(post.likes.some(like => like === user.uid));
+
+    const handleLike = useCallback(
+        throttle(async () => {
+            let likes;
+            if (liked) {
+                setLikesCount((prevCount) => prevCount - 1);
+                setLiked(false);
+                likes = post.likes.filter((like) => like !== user.uid);
+            } else {
+                setLiked(true);
+                setLikesCount((prevCount) => prevCount + 1);
+                likes = [...post.likes, user.uid]
+            }
+
+            await updateDocument(post.id, { likes });
+        }, 500),
+        [liked, post.id]
+    );
 
     return (
         <Card>
@@ -33,7 +57,7 @@ export default function PostCard({ post }) {
                         <span> shared a </span>
                         <a className='text-socialBlue'>post</a>
                     </p>
-                    <p className='text-gray-500 text-sm'>2 hours ago</p>
+                    <p className='text-gray-500 text-sm'>{formatDistanceToNow(post.createdAt.toDate(), { addSuffix: true })}</p>
                 </div>
                 <div className='ml-auto'>
                     {!isComponentVisible && (
@@ -97,11 +121,11 @@ export default function PostCard({ post }) {
                 </div>
             </div>
             <div className='mt-5 flex gap-8'>
-                <button className='flex gap-2 items-center'>
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+                <button onClick={handleLike} className='flex gap-2 items-center'>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill={liked ? 'red' : 'none'} viewBox="0 0 24 24" strokeWidth={1.5} stroke={liked ? 'red' : 'currentColor'} className="w-6 h-6">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
                     </svg>
-                    {post.likes}
+                    {likesCount}
                 </button>
                 <button className='flex gap-2 items-center'>
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">

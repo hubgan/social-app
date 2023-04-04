@@ -36,7 +36,7 @@ export default function PostFormCard() {
             createdBy: user.uid,
             creatorName: user.displayName,
             comments: [],
-            likes: 0,
+            likes: [],
             shares: 0
         };
 

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { collection, doc, getDoc, getDocs, query, where } from 'firebase/firestore';
+import { collection, doc, getDoc, onSnapshot, orderBy, query, where } from 'firebase/firestore';
 import { db } from '../firebase/config';
 
 // components
@@ -24,17 +24,17 @@ export default function Home() {
             const userSnapshot = await getDoc(userDoc);
             const friends = [...userSnapshot.data().friends, user.uid];
 
-            const postsQuery = query(collection(db, 'posts'), where('createdBy', 'in', friends));
-            const postsSnapshot = await getDocs(postsQuery);
-            const postsData = postsSnapshot.docs.map((doc) => {
-                return {
+            let collectionRef = query(collection(db, 'posts'), where('createdBy', 'in', friends), orderBy("createdAt", "desc"));
+
+            onSnapshot(collectionRef, (snapshot) => {
+                const data = snapshot.docs.map((doc) => ({
                     id: doc.id,
                     ...doc.data()
-                }
-            });
+                }));
 
-            setPosts(postsData);
-            setIsLoading(false);
+                setPosts(data);
+                setIsLoading(false);
+            })
         }
 
         getUserData();
