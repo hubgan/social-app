@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react'
+import React, { useCallback, useRef, useState } from 'react'
 import { Link } from 'react-router-dom';
 import { throttle } from 'lodash';
 import { formatDistanceToNow } from 'date-fns';
@@ -12,14 +12,19 @@ import useComponentVisible from '../hooks/useComponentVisible';
 import useAuthContext from '../hooks/useAuthContext';
 import { useDocument } from '../hooks/useDocument';
 import { useFirestore } from '../hooks/useFirestore';
+import Comments from './Comments';
+import { db } from '../firebase/config';
+import { useComments } from '../hooks/useComments';
 
 export default function PostCard({ post }) {
     const { ref, isComponentVisible, setIsComponentVisible } = useComponentVisible(false);
     const { user } = useAuthContext();
     const { document } = useDocument('users', post.createdBy);
     const { updateDocument } = useFirestore('posts');
+    const { addComment } = useComments();
     const [likesCount, setLikesCount] = useState(post.likes.length);
     const [liked, setLiked] = useState(post.likes.some(like => like === user.uid));
+    const commentRef = useRef(null);
 
     const handleLike = useCallback(
         throttle(async () => {
@@ -39,6 +44,12 @@ export default function PostCard({ post }) {
         [liked, post.id]
     );
 
+    const handleAddComment = () => {
+        const referenceArray = [db, 'posts', post.id, 'comments']
+        addComment(referenceArray, user.displayName, user.photoURL, user.uid, commentRef.current.value);
+        commentRef.current.value = '';
+    }
+
     return (
         <Card>
             <div className='flex gap-3'>
@@ -57,7 +68,9 @@ export default function PostCard({ post }) {
                         <span> shared a </span>
                         <a className='text-socialBlue'>post</a>
                     </p>
-                    <p className='text-gray-500 text-sm'>{formatDistanceToNow(post.createdAt.toDate(), { addSuffix: true })}</p>
+                    {post.createdAt && (
+                        <p className='text-gray-500 text-sm'>{formatDistanceToNow(post.createdAt.toDate(), { addSuffix: true })}</p>
+                    )}
                 </div>
                 <div className='ml-auto'>
                     {!isComponentVisible && (
@@ -77,7 +90,7 @@ export default function PostCard({ post }) {
                     <div ref={ref} className='relative'>
                         {isComponentVisible && (
                             <div className='absolute -right-6 bg-white shadow-md shadow-gray-300 p-3
-                             rounded-sm border-gray-100 w-52'>
+                             rounded-sm border-gray-100 w-52 z-10'>
                                 <a href='' className='flex gap-3 py-2 my-2 -mx-4 px-4 rounded-md hover:bg-socialBlue transition-all hover:scale-110 hover:shadow-md hover:text-white shadow-gray-300'>
                                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
                                         <path strokeLinecap="round" strokeLinejoin="round" d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0111.186 0z" />
@@ -131,7 +144,7 @@ export default function PostCard({ post }) {
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12.76c0 1.6 1.123 2.994 2.707 3.227 1.087.16 2.185.283 3.293.369V21l4.076-4.076a1.526 1.526 0 011.037-.443 48.282 48.282 0 005.68-.494c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z" />
                     </svg>
-                    {post.comments.length}
+                    {post.numberOfComments}
                 </button>
                 <button className='flex gap-2 items-center'>
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
@@ -145,13 +158,16 @@ export default function PostCard({ post }) {
                     <Avatar src={user.photoURL} />
                 </div>
                 <div className='border grow rounded-full relative'>
-                    <textarea className='block w-full py-3 px-4 h-12 rounded-full overflow-hidden resize-none' placeholder='Leave a comment' />
-                    <button className='absolute top-3 right-3 text-gray-400'>
+                    <textarea ref={commentRef} className='block w-full py-3 px-4 h-12 rounded-full overflow-hidden resize-none' placeholder='Leave a comment' />
+                    <button onClick={handleAddComment} className='absolute top-3 right-3 text-gray-400'>
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
                         </svg>
                     </button>
                 </div>
+            </div>
+            <div>
+                <Comments referenceArray={[db, 'posts', post.id, 'comments']} />
             </div>
         </Card>
     );

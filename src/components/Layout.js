@@ -14,9 +14,9 @@ export default function Layout({ children, hideNavigation }) {
     }
 
     return (
-        <div className='md:flex gap-6 mt-4 max-w-4xl mx-auto mb-24 md:mb-0'>
+        <div className='md:flex gap-6 mt-48 max-w-4xl mx-auto md:mt-4 md:mb-0'>
             {!hideNavigation && (
-                <div className='fixed z-50 w-full bottom-0 -mb-5 md:static md:w-1/4 md:mb-0'>
+                <div className='fixed z-50 w-full top-0 -mb-5 md:static md:w-1/4 md:mb-0'>
                     <Search />
                     <NavigationCard />
                 </div>

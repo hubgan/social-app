@@ -23,7 +23,7 @@ export default function Search() {
     }
 
     return (
-        <Card>
+        <Card noMargin={true}>
             <div className="flex flex-col justify-center">
                 <div className="relative flex w-full flex-wrap items-stretch">
                     <input

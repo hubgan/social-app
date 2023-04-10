@@ -7,6 +7,10 @@ export default function Avatar({ size, src = 'https://images.unsplash.com/photo-
         width = 'w-24 md:w-36';
     }
 
+    if (size === 'xs') {
+        width = 'w-6';
+    }
+
     return (
         <div className={`${width} rounded-full overflow-hidden`}>
             <img src={src} alt='avatar' />
