@@ -5,7 +5,8 @@ import Comment from './Comment';
 import LoadingSpinner from './LoadingSpinner';
 
 export default function Comments({ referenceArray }) {
-    const [comments, setComments] = useState([]);
+    const [vissibleCommentsCount, setVisibleCommentsCount] = useState(0);
+    const [data, setData] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
     const unsubsribe = useRef(null);
@@ -21,7 +22,7 @@ export default function Comments({ referenceArray }) {
                     ...doc.data()
                 }));
 
-                setComments(data);
+                setData(data);
                 setError(null);
                 setIsLoading(false);
             }, (error) => {
@@ -38,7 +39,13 @@ export default function Comments({ referenceArray }) {
                 return unsubsribe();
             }
         }
-    }, [])
+    }, [referenceArray]);
+
+    const showMoreComments = () => {
+        setVisibleCommentsCount((prevCommentsCount) => prevCommentsCount + 3);
+    }
+
+    const comments = data.length > 0 ? data.slice(0, vissibleCommentsCount) : [];
 
     if (isLoading) {
         return (
@@ -57,6 +64,11 @@ export default function Comments({ referenceArray }) {
 
                 <Comment key={comment.id} comment={comment} referenceArray={referenceArray} />
             ))}
+            {data.length > vissibleCommentsCount && (
+                <div className='flex items-center justify-center mt-3'>
+                    <span onClick={showMoreComments} className='text-socialBlue cursor-pointer text-sm'>Load more comments</span>
+                </div>
+            )}
         </>
     );
 }

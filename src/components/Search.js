@@ -7,12 +7,13 @@ import Avatar from './Avatar';
 // hooks
 import { useCollection } from '../hooks/useCollection';
 import { Link } from 'react-router-dom';
+import { debounce } from 'lodash';
 
 export default function Search() {
     const { documents } = useCollection('users');
     const [users, setUsers] = useState([]);
 
-    const filterUsers = (e) => {
+    const filterUsers = debounce((e) => {
         if (e.target.value === '') {
             setUsers([]);
             return;
@@ -20,7 +21,7 @@ export default function Search() {
 
         const result = documents.filter((user) => user.name.toLowerCase().includes(e.target.value.toLowerCase()));
         setUsers(result);
-    }
+    }, 100)
 
     return (
         <Card noMargin={true}>
