@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useState } from 'react'
+import React, { useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { throttle } from 'lodash';
 import { formatDistanceToNow } from 'date-fns';
@@ -6,6 +6,7 @@ import { formatDistanceToNow } from 'date-fns';
 // components
 import Avatar from './Avatar';
 import Card from './Card';
+import PostMenu from './PostMenu';
 
 // hooks
 import useComponentVisible from '../hooks/useComponentVisible';
@@ -17,158 +18,181 @@ import { db } from '../firebase/config';
 import { useComments } from '../hooks/useComments';
 
 export default function PostCard({ post }) {
-    const { ref, isComponentVisible, setIsComponentVisible } = useComponentVisible(false);
-    const { user } = useAuthContext();
-    const { document } = useDocument('users', post.createdBy);
-    const { updateDocument } = useFirestore('posts');
-    const { addComment } = useComments();
-    const [likesCount, setLikesCount] = useState(post.likes.length);
-    const [liked, setLiked] = useState(post.likes.some(like => like === user.uid));
-    const commentRef = useRef(null);
+	const { ref, isComponentVisible, setIsComponentVisible } =
+		useComponentVisible(false);
+	const { user } = useAuthContext();
+	const { document } = useDocument('users', post.createdBy);
+	const { updateDocument } = useFirestore('posts');
+	const { addComment } = useComments();
+	const [likesCount, setLikesCount] = useState(post.likes.length);
+	const [liked, setLiked] = useState(
+		post.likes.some((like) => like === user.uid),
+	);
+	const commentRef = useRef(null);
 
-    const handleLike = useCallback(
-        throttle(async () => {
-            let likes;
-            if (liked) {
-                setLikesCount((prevCount) => prevCount - 1);
-                setLiked(false);
-                likes = post.likes.filter((like) => like !== user.uid);
-            } else {
-                setLiked(true);
-                setLikesCount((prevCount) => prevCount + 1);
-                likes = [...post.likes, user.uid]
-            }
+	const handleLike = throttle(async () => {
+		let likes;
+		if (liked) {
+			setLikesCount((prevCount) => prevCount - 1);
+			setLiked(false);
+			likes = post.likes.filter((like) => like !== user.uid);
+		} else {
+			setLikesCount((prevCount) => prevCount + 1);
+			setLiked(true);
+			likes = [...post.likes, user.uid];
+		}
 
-            await updateDocument(post.id, { likes });
-        }, 500),
-        [liked, post.id]
-    );
+		await updateDocument(post.id, { likes });
+	}, 1000);
 
-    const handleAddComment = () => {
-        const referenceArray = [db, 'posts', post.id, 'comments']
-        addComment(referenceArray, user.displayName, user.photoURL, user.uid, commentRef.current.value);
-        commentRef.current.value = '';
-    }
+	const handleAddComment = () => {
+		const referenceArray = [db, 'posts', post.id, 'comments'];
+		addComment(
+			referenceArray,
+			user.displayName,
+			user.photoURL,
+			user.uid,
+			commentRef.current.value,
+		);
+		commentRef.current.value = '';
+	};
 
-    return (
-        <Card>
-            <div className='flex gap-3'>
-                <div>
-                    <Link to={'/profile/posts'}>
-                        <span className='cursor-pointer'>
-                            {document && <Avatar src={document.avatar} />}
-                        </span>
-                    </Link>
-                </div>
-                <div>
-                    <p>
-                        <Link to={'/profile/posts'}>
-                            <span href='' className='font-semibold cursor-pointer hover:underline'>{post.creatorName}</span>
-                        </Link>
-                        <span> shared a </span>
-                        <a className='text-socialBlue'>post</a>
-                    </p>
-                    {post.createdAt && (
-                        <p className='text-gray-500 text-sm'>{formatDistanceToNow(post.createdAt.toDate(), { addSuffix: true })}</p>
-                    )}
-                </div>
-                <div className='ml-auto'>
-                    {!isComponentVisible && (
-                        <button onClick={() => setIsComponentVisible(true)} className='text-gray-400'>
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM12.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM18.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />
-                            </svg>
-                        </button>
-                    )}
-                    {isComponentVisible && (
-                        <button onClick={() => setIsComponentVisible(false)} className='text-gray-400'>
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM12.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM18.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />
-                            </svg>
-                        </button>
-                    )}
-                    <div ref={ref} className='relative'>
-                        {isComponentVisible && (
-                            <div className='absolute -right-6 bg-white shadow-md shadow-gray-300 p-3
-                             rounded-sm border-gray-100 w-52 z-10'>
-                                <a href='' className='flex gap-3 py-2 my-2 -mx-4 px-4 rounded-md hover:bg-socialBlue transition-all hover:scale-110 hover:shadow-md hover:text-white shadow-gray-300'>
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0111.186 0z" />
-                                    </svg>
-                                    Save post</a>
-                                <a href='' className='flex gap-3 py-2 my-2 -mx-4 px-4 rounded-md hover:bg-socialBlue transition-all hover:scale-110 hover:shadow-md hover:text-white shadow-gray-300'>
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
-                                    </svg>
-                                    Turn notifictaions</a>
-                                <a href='' className='flex gap-3 py-2 my-2 -mx-4 px-4 rounded-md hover:bg-socialBlue transition-all hover:scale-110 hover:shadow-md hover:text-white shadow-gray-300'>
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                                    </svg>
-                                    Hide post</a>
-                                <a href='' className='flex gap-3 py-2 my-2 -mx-4 px-4 rounded-md hover:bg-socialBlue transition-all hover:scale-110 hover:shadow-md hover:text-white shadow-gray-300'>
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
-                                    </svg>
-                                    Delete post</a>
-                                <a href='' className='flex gap-3 py-2 my-2 -mx-4 px-4 rounded-md hover:bg-socialBlue transition-all hover:scale-110 hover:shadow-md hover:text-white shadow-gray-300'>
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
-                                    </svg>
-                                    Report</a>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            </div>
-            <div>
-                <p className='my-3 text-sm'>
-                    {post.content}
-                </p>
-                <div className='rounded-md overflow-hidden'>
-                    {post.photos.length > 0 && post.photos.map((photo) => (
-                        <div key={photo}>
-                            <img src={photo} alt='post' />
-                        </div>
-                    ))}
-                </div>
-            </div>
-            <div className='mt-5 flex gap-8'>
-                <button onClick={handleLike} className='flex gap-2 items-center'>
-                    <svg xmlns="http://www.w3.org/2000/svg" fill={liked ? 'red' : 'none'} viewBox="0 0 24 24" strokeWidth={1.5} stroke={liked ? 'red' : 'currentColor'} className="w-6 h-6">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
-                    </svg>
-                    {likesCount}
-                </button>
-                <button className='flex gap-2 items-center'>
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12.76c0 1.6 1.123 2.994 2.707 3.227 1.087.16 2.185.283 3.293.369V21l4.076-4.076a1.526 1.526 0 011.037-.443 48.282 48.282 0 005.68-.494c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z" />
-                    </svg>
-                    {post.numberOfComments}
-                </button>
-                <button className='flex gap-2 items-center'>
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186l9.566-5.314m-9.566 7.5l9.566 5.314m0 0a2.25 2.25 0 103.935 2.186 2.25 2.25 0 00-3.935-2.186zm0-12.814a2.25 2.25 0 103.933-2.185 2.25 2.25 0 00-3.933 2.185z" />
-                    </svg>
-                    {post.shares}
-                </button>
-            </div>
-            <div className='flex gap-3 mt-4'>
-                <div>
-                    <Avatar src={user.photoURL} />
-                </div>
-                <div className='border grow rounded-full relative'>
-                    <textarea ref={commentRef} className='block w-full py-3 px-4 h-12 rounded-full overflow-hidden resize-none' placeholder='Leave a comment' />
-                    <button onClick={handleAddComment} className='absolute top-3 right-3 text-gray-400'>
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
-                        </svg>
-                    </button>
-                </div>
-            </div>
-            <div>
-                <Comments referenceArray={[db, 'posts', post.id, 'comments']} />
-            </div>
-        </Card>
-    );
+	return (
+		<Card>
+			<div className='flex gap-3'>
+				<div>
+					<Link to={`/profile/${post.createdBy}/posts`}>
+						<span className='cursor-pointer'>
+							{document && <Avatar src={document.avatar} />}
+						</span>
+					</Link>
+				</div>
+				<div>
+					<p>
+						<Link to={`/profile/${post.createdBy}/posts`}>
+							<span className='font-semibold cursor-pointer hover:underline'>
+								{post.creatorName}
+							</span>
+						</Link>
+						<span> shared a </span>
+						<a href='#' className='text-socialBlue'>
+							post
+						</a>
+					</p>
+					{post.createdAt && (
+						<p className='text-gray-500 text-sm'>
+							{formatDistanceToNow(post.createdAt.toDate(), {
+								addSuffix: true,
+							})}
+						</p>
+					)}
+				</div>
+				<div className='ml-auto'>
+					<PostMenu
+						refProp={ref}
+						isComponentVisible={isComponentVisible}
+						setIsComponentVisible={setIsComponentVisible}
+					/>
+				</div>
+			</div>
+			<div>
+				<p className='my-3 text-sm'>{post.content}</p>
+				<div className='rounded-md overflow-hidden'>
+					{post.photos.length > 0 &&
+						post.photos.map((photo) => (
+							<div key={photo}>
+								<img src={photo} alt='post' />
+							</div>
+						))}
+				</div>
+			</div>
+			<div className='mt-5 flex gap-8'>
+				<button onClick={handleLike} className='flex gap-2 items-center'>
+					<svg
+						xmlns='http://www.w3.org/2000/svg'
+						fill={liked ? 'red' : 'none'}
+						viewBox='0 0 24 24'
+						strokeWidth={1.5}
+						stroke={liked ? 'red' : 'currentColor'}
+						className='w-6 h-6'
+					>
+						<path
+							strokeLinecap='round'
+							strokeLinejoin='round'
+							d='M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z'
+						/>
+					</svg>
+					{likesCount}
+				</button>
+				<button className='flex gap-2 items-center'>
+					<svg
+						xmlns='http://www.w3.org/2000/svg'
+						fill='none'
+						viewBox='0 0 24 24'
+						strokeWidth={1.5}
+						stroke='currentColor'
+						className='w-6 h-6'
+					>
+						<path
+							strokeLinecap='round'
+							strokeLinejoin='round'
+							d='M2.25 12.76c0 1.6 1.123 2.994 2.707 3.227 1.087.16 2.185.283 3.293.369V21l4.076-4.076a1.526 1.526 0 011.037-.443 48.282 48.282 0 005.68-.494c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z'
+						/>
+					</svg>
+					{post.numberOfComments || 0}
+				</button>
+				<button className='flex gap-2 items-center'>
+					<svg
+						xmlns='http://www.w3.org/2000/svg'
+						fill='none'
+						viewBox='0 0 24 24'
+						strokeWidth={1.5}
+						stroke='currentColor'
+						className='w-6 h-6'
+					>
+						<path
+							strokeLinecap='round'
+							strokeLinejoin='round'
+							d='M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186l9.566-5.314m-9.566 7.5l9.566 5.314m0 0a2.25 2.25 0 103.935 2.186 2.25 2.25 0 00-3.935-2.186zm0-12.814a2.25 2.25 0 103.933-2.185 2.25 2.25 0 00-3.933 2.185z'
+						/>
+					</svg>
+					{post.shares}
+				</button>
+			</div>
+			<div className='flex gap-3 mt-4'>
+				<div>
+					<Avatar src={user.photoURL} />
+				</div>
+				<div className='border grow rounded-full relative'>
+					<textarea
+						ref={commentRef}
+						className='block w-full py-3 px-4 h-12 rounded-full overflow-hidden resize-none'
+						placeholder='Leave a comment'
+					/>
+					<button
+						onClick={handleAddComment}
+						className='absolute top-3 right-3 text-gray-400'
+					>
+						<svg
+							xmlns='http://www.w3.org/2000/svg'
+							fill='none'
+							viewBox='0 0 24 24'
+							strokeWidth={1.5}
+							stroke='currentColor'
+							className='w-6 h-6'
+						>
+							<path
+								strokeLinecap='round'
+								strokeLinejoin='round'
+								d='M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5'
+							/>
+						</svg>
+					</button>
+				</div>
+			</div>
+			<div>
+				<Comments referenceArray={[db, 'posts', post.id, 'comments']} />
+			</div>
+		</Card>
+	);
 }

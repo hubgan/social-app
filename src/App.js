@@ -10,7 +10,6 @@ import Posts from './pages/profile/Posts'
 import About from './pages/profile/About'
 import Friends from './pages/profile/Friends'
 import Photos from './pages/profile/Photos'
-import Saved from './pages/Saved';
 import Notifications from './pages/Notifications';
 import Signup from './pages/Signup';
 import Login from './pages/Login';
@@ -33,7 +32,6 @@ export default function App() {
             <Route path='friends' element={<PrivateRoute Component={Friends} />} />
             <Route path='photos' element={<PrivateRoute Component={Photos} />} />
           </Route>
-          <Route path='/saved' element={<PrivateRoute Component={Saved} />} />
           <Route path='/notifications' element={<PrivateRoute Component={Notifications} />} />
           <Route path='/signup' element={<PrivateRoute Component={Signup} RedirectURL={'/'} isUserLoggedIn={false} />} />
           <Route path='/login' element={<PrivateRoute Component={Login} RedirectURL={'/'} isUserLoggedIn={false} />} />

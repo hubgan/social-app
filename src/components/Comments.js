@@ -1,10 +1,10 @@
 import { collection, onSnapshot } from 'firebase/firestore';
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useRef, useState, memo } from 'react'
 
 import Comment from './Comment';
 import LoadingSpinner from './LoadingSpinner';
 
-export default function Comments({ referenceArray }) {
+function Comments({ referenceArray }) {
     const [vissibleCommentsCount, setVisibleCommentsCount] = useState(0);
     const [data, setData] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
@@ -72,3 +72,10 @@ export default function Comments({ referenceArray }) {
         </>
     );
 }
+
+const areEqual = (prevProps, nextProps) => {
+    // There is no need to compare all items because the previous ones stay the same, only the number can be increased by adding new ones
+    return prevProps.length === nextProps.length;
+};
+
+export default memo(Comments, areEqual);
