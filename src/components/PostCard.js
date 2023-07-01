@@ -16,6 +16,8 @@ import { useFirestore } from '../hooks/useFirestore';
 import Comments from './Comments';
 import { db } from '../firebase/config';
 import { useComments } from '../hooks/useComments';
+import Portal from './Portal';
+import ImageSlider from './ImageSlider';
 
 export default function PostCard({ post }) {
 	const { ref, isComponentVisible, setIsComponentVisible } =
@@ -28,6 +30,7 @@ export default function PostCard({ post }) {
 	const [liked, setLiked] = useState(
 		post.likes.some((like) => like === user.uid),
 	);
+	const [isSliderOpen, setIsSliderOpen] = useState(false);
 	const commentRef = useRef(null);
 
 	const handleLike = throttle(async () => {
@@ -57,6 +60,10 @@ export default function PostCard({ post }) {
 		commentRef.current.value = '';
 	};
 
+	const closeSlider = () => {
+		setIsSliderOpen(false);
+	};
+
 	return (
 		<Card>
 			<div className='flex gap-3'>
@@ -75,9 +82,7 @@ export default function PostCard({ post }) {
 							</span>
 						</Link>
 						<span> shared a </span>
-						<a href='#' className='text-socialBlue'>
-							post
-						</a>
+						<span className='text-socialBlue inline-block'>post</span>
 					</p>
 					{post.createdAt && (
 						<p className='text-gray-500 text-sm'>
@@ -97,14 +102,23 @@ export default function PostCard({ post }) {
 			</div>
 			<div>
 				<p className='my-3 text-sm'>{post.content}</p>
-				<div className='rounded-md overflow-hidden'>
-					{post.photos.length > 0 &&
-						post.photos.map((photo) => (
-							<div key={photo}>
-								<img src={photo} alt='post' />
-							</div>
-						))}
+				<div
+					onClick={() => setIsSliderOpen(true)}
+					className='rounded-md overflow-hidden cursor-pointer relative'
+				>
+					{post.photos.length > 0 && <img src={post.photos[0]} alt='post' />}
+					{post.photos.length > 1 && (
+						<p className='absolute top-1 left-1 font-abril-fatface text-5xl'>
+							+{post.photos.length - 1} More
+						</p>
+					)}
 				</div>
+				<Portal
+					Component={ImageSlider}
+					data={post.photos}
+					isOpen={isSliderOpen}
+					close={closeSlider}
+				/>
 			</div>
 			<div className='mt-5 flex gap-8'>
 				<button onClick={handleLike} className='flex gap-2 items-center'>
