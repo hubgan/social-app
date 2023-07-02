@@ -1,66 +1,75 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { auth, db, storage } from '../firebase/config';
 import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 import { doc, setDoc } from 'firebase/firestore';
-import useAuthContext from './useAuthContext'
+import useAuthContext from './useAuthContext';
 
 export default function useSignup() {
-    const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState(null);
-    const [isCancelled, setIsCancelled] = useState(false);
-    const { dispatch } = useAuthContext();
+	const [isLoading, setIsLoading] = useState(false);
+	const [error, setError] = useState(null);
+	const [isCancelled, setIsCancelled] = useState(false);
+	const { dispatch } = useAuthContext();
 
-    const signup = async (email, password, name, surname, avatar) => {
-        setError(null);
-        setIsLoading(true);
+	const signup = async (email, password, name, surname, avatar) => {
+		setError(null);
+		setIsLoading(true);
 
-        try {
-            const res = await createUserWithEmailAndPassword(auth, email, password);
+		try {
+			const res = await createUserWithEmailAndPassword(auth, email, password);
 
-            if (!res) {
-                throw new Error('Could not complete signup');
-            }
+			if (!res) {
+				throw new Error('Could not complete signup');
+			}
 
-            const fullname = `${name} ${surname}`;
-            const uploadPath = `avatars/${res.user.uid}/${avatar.name}`;
-            const avatarsRef = ref(storage, uploadPath);
-            await uploadBytes(avatarsRef, avatar);
-            const imgUrl = await getDownloadURL(avatarsRef);
+			const fullname = `${name} ${surname}`;
 
-            await updateProfile(res.user, { displayName: fullname, photoURL: imgUrl });
+			let imgUrl = null;
+			if (avatar) {
+				const uploadPath = `avatars/${res.user.uid}/${avatar.name}`;
+				const avatarsRef = ref(storage, uploadPath);
+				await uploadBytes(avatarsRef, avatar);
+				imgUrl = await getDownloadURL(avatarsRef);
+			} else {
+				imgUrl = process.env.REACT_APP_DEFAULT_PROFILE_AVATAR;
+			}
 
-            await setDoc(doc(db, 'users', res.user.uid), {
-                id: res.user.uid,
-                name: fullname,
-                email: email,
-                avatar: imgUrl,
-                location: 'location...',
-                about: 'about me...',
-                cover: 'https://images.unsplash.com/photo-1498503182468-3b51cbb6cb24?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80',
-                friends: []
-            });
+			await updateProfile(res.user, {
+				displayName: fullname,
+				photoURL: imgUrl,
+			});
 
-            dispatch({ type: 'LOGIN', payload: res.user });
+			await setDoc(doc(db, 'users', res.user.uid), {
+				id: res.user.uid,
+				name: fullname,
+				email: email,
+				avatar: imgUrl,
+				location: 'location...',
+				about: 'about me...',
+				cover: process.env.REACT_APP_DEFAULT_COVER_IMAGE,
+				friends: [],
+			});
 
-            if (!isCancelled) {
-                setIsLoading(false);
-                setError(null);
-            }
-        } catch (err) {
-            if (!isCancelled) {
-                setError(err.message);
-                setIsLoading(false);
-                console.log(err.message);
-            }
-        }
-    }
+			dispatch({ type: 'LOGIN', payload: res.user });
 
-    useEffect(() => {
-        setIsCancelled(false);
+			if (!isCancelled) {
+				setIsLoading(false);
+				setError(null);
+			}
+		} catch (err) {
+			if (!isCancelled) {
+				setError(err.message);
+				setIsLoading(false);
+				console.log(err.message);
+			}
+		}
+	};
 
-        return () => setIsCancelled(true);
-    }, [])
+	useEffect(() => {
+		setIsCancelled(false);
 
-    return { signup, error, isLoading };
+		return () => setIsCancelled(true);
+	}, []);
+
+	return { signup, error, isLoading };
 }
