@@ -16,6 +16,16 @@ module.exports = {
 			fontFamily: {
 				'abril-fatface': ['"Abril Fatface"'],
 			},
+			keyframes: {
+				slide: {
+					'0%': { top: '-5%', opacity: '1' },
+					'4%, 96%': { top: '5%', opacity: '1' },
+					'100%': { top: '5%', opacity: '0' },
+				},
+			},
+			animation: {
+				modal: 'slide 5s linear forwards',
+			},
 		},
 	},
 	variants: {
@@ -23,3 +33,4 @@ module.exports = {
 	},
 	plugins: [],
 };
+

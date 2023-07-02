@@ -1,6 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import useAuthContext from '../hooks/useAuthContext';
 import { useFirestore } from '../hooks/useFirestore';
+
+import Portal from './Portal';
+import ToastNotification from './ToastNotification';
 
 export default function PostMenu({
 	refProp,
@@ -11,12 +14,32 @@ export default function PostMenu({
 }) {
 	const { user } = useAuthContext();
 	const { deleteDocument } = useFirestore('posts');
+	const { addDocument } = useFirestore('reports');
+	const [isModalOpen, setIsModalOpen] = useState(false);
 
 	const handleDelete = () => {
 		if (user.uid !== createdBy) return;
 
 		setIsComponentVisible(false);
 		deleteDocument(postId);
+	};
+
+	const handleReport = () => {
+		if (user.uid === createdBy) return;
+
+		setIsModalOpen(true);
+		setIsComponentVisible(false);
+
+		const reportData = {
+			postId: postId,
+			reportedBy: user.uid,
+		};
+
+		addDocument(reportData);
+	};
+
+	const closeModal = () => {
+		setIsModalOpen(false);
 	};
 
 	return (
@@ -70,9 +93,8 @@ export default function PostMenu({
                              rounded-sm border-gray-100 w-52 z-10'
 					>
 						{user.uid === createdBy && (
-							<a
-								href='#'
-								className='flex gap-3 py-2 my-2 -mx-4 px-4 rounded-md hover:bg-socialBlue transition-all hover:scale-110 hover:shadow-md hover:text-white shadow-gray-300'
+							<p
+								className='flex gap-3 py-2 my-2 -mx-4 px-4 rounded-md hover:bg-socialBlue transition-all hover:scale-110 hover:shadow-md hover:text-white shadow-gray-300 cursor-pointer'
 								onClick={handleDelete}
 							>
 								<svg
@@ -90,12 +112,12 @@ export default function PostMenu({
 									/>
 								</svg>
 								Delete post
-							</a>
+							</p>
 						)}
 						{user.uid !== createdBy && (
-							<a
-								href='#'
-								className='flex gap-3 py-2 my-2 -mx-4 px-4 rounded-md hover:bg-socialBlue transition-all hover:scale-110 hover:shadow-md hover:text-white shadow-gray-300'
+							<p
+								className='flex gap-3 py-2 my-2 -mx-4 px-4 rounded-md hover:bg-socialBlue transition-all hover:scale-110 hover:shadow-md hover:text-white shadow-gray-300 cursor-pointer'
+								onClick={handleReport}
 							>
 								<svg
 									xmlns='http://www.w3.org/2000/svg'
@@ -112,11 +134,17 @@ export default function PostMenu({
 									/>
 								</svg>
 								Report
-							</a>
+							</p>
 						)}
 					</div>
 				)}
 			</div>
+			<Portal
+				Component={ToastNotification}
+				data={{ message: 'Report has been sent successfully' }}
+				isOpen={isModalOpen}
+				close={closeModal}
+			/>
 		</>
 	);
 }
