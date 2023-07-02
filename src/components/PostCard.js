@@ -97,6 +97,8 @@ export default function PostCard({ post }) {
 						refProp={ref}
 						isComponentVisible={isComponentVisible}
 						setIsComponentVisible={setIsComponentVisible}
+						createdBy={post.createdBy}
+						postId={post.id}
 					/>
 				</div>
 			</div>
